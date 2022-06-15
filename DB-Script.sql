@@ -29,10 +29,13 @@ Create Table Ersatzteil (
 --Aufgabe 1.2 Import der Daten
 INSERT INTO Mitarbeiter SELECT * FROM trommelhelden..quelleMitarbeiter
 INSERT INTO Kunde SELECT * FROM trommelhelden..quelleKunde
-INSERT INTO Ersatzteil SELECT * FROM trommelhelden..quelleErsatzteil--Aufgabe 1.3 Kopie von TabellenSELECT * INTO Auftrag FROM trommelhelden..quelleAuftrag
+INSERT INTO Ersatzteil SELECT * FROM trommelhelden..quelleErsatzteil
+
+--Aufgabe 1.3 Kopie von Tabellen
+SELECT * INTO Auftrag FROM trommelhelden..quelleAuftrag
 SELECT * INTO Montage FROM trommelhelden..quelleMontage
 
---Aufgabe 1.4 Ändern von Schlüsseln
+--Aufgabe 1.4 Ã„ndern von SchlÃ¼sseln
 Alter Table Auftrag Add Primary Key (AufNr);
 Alter Table Auftrag Add Foreign Key (MitID) References Mitarbeiter(MitID);
 Alter Table Auftrag Add Foreign Key (KunNr) References Kunde(KunNr);
@@ -47,7 +50,7 @@ Select * From Auftrag
 --Aufgabe 1.5 
 --Rechtsklick, Design
 
---Aufgabe 1.6 Datensätze zählen
+--Aufgabe 1.6 DatensÃ¤tze zÃ¤hlen
 Select Count(*) From Auftrag;
 
 
@@ -128,4 +131,12 @@ Select * from Auftrag Where month(AufDat) = month(GetDate())
 --g)
 Select EtBezeichnung, m.EtID, Sum(Anzahl) as Gebrauch from Ersatzteil e Join Montage m on e.EtID = m.EtID Join Auftrag a on a.AufNr = m.AufNr Where month(AufDat) = month(GetDate()) group by EtBezeichnung, m.EtID
 
-Select * from Ersatzteil
+--Aufgabe 2.6
+--a)
+Select m.MitID, m.MitName from Mitarbeiter m Where Not Exists (Select a.MitID from Auftrag a Where month(GetDate()) = month(GetDate()) And a.MitID = m.MitID)
+--b)
+Select a.AufNr from Auftrag a Where Not Exists (Select m.AufNr from Montage m Where a.AufNr = m.AufNr)
+--Gegensumme
+Select Count(AufNr) as Summe from Montage Group by AufNr
+--c)
+Select AufNr, AufDat from Auftrag Where AufDat = (Select Min(AufDat) from Auftrag Where Dauer is Null)
