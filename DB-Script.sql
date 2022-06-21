@@ -66,7 +66,7 @@ SELECT * FROM Kunde WHERE KunOrt NOT LIKE 'Chemnitz'
 Select * From Ersatzteil Where EtBezeichnung Like 'S%'
 
 --d)
-Select * From Auftrag Where Anfahrt > 80 Or (1.9 < Dauer And Dauer < 3.1)
+Select * From Auftrag Where Anfahrt > 80 Or between 2 and 3
 
 --e)
 Select MitName, MitVorname, MitJob from Mitarbeiter Where MitEinsatzort = 'Radebeul' Order by MitName 
@@ -75,7 +75,7 @@ Select MitName, MitVorname, MitJob from Mitarbeiter Where MitEinsatzort = 'Radeb
 Select Count(*) from Auftrag Where Dauer is Null
 
 --g)
-Select *, Anfahrt*2.50 as Anfahrtskosten from Auftrag Where Anfahrt is not null
+Select *, Format(Anfahrt*2.50, 'C') as Anfahrtskosten from Auftrag Where Anfahrt is not null
 
 --h)
 SELECT EtPreis*EtAnzLager AS Warenbestand_in_Euro FROM Ersatzteil
@@ -83,12 +83,15 @@ SELECT EtPreis*EtAnzLager AS Warenbestand_in_Euro FROM Ersatzteil
 
 --Aufgabe 2.2 
 --a)
-Select MitName, MitVorname, MitGebDat, Case when DateAdd(year, DateDiff(year, MitGebDat, GetDate()), MitGebDat) > GetDate() then DateDiff(Year, MitGebDat, GetDate()) - 1 else DateDiff(Year, MitGebDat, Getdate()) end as MitAlter from Mitarbeiter
+Select MitName, MitVorname, MitGebDat, 
+Case when DateAdd(year, DateDiff(year, MitGebDat, GetDate()), MitGebDat) > GetDate() then DateDiff(Year, MitGebDat, GetDate()) - 1 
+else DateDiff(Year, MitGebDat, Getdate()) end as MitAlter 
+from Mitarbeiter
 --b)
-Select avg(DateDiff(day, AufDat, ErlDat)) as durchschnittliche_Frist from Auftrag where month(ErlDat) = month(GetDate())
+Select avg(DateDiff(day, AufDat, ErlDat)) as durchschnittliche_Frist from Auftrag where month(ErlDat) = month(GetDate()) and year(ErlDat) = year(GetDate())
 --c)
 Select Aufnr, Case when Dauer is Null then 0 else Dauer end as Auftragsdauer from Auftrag
-
+Select Aufnr, isnull(Dauer, 0) from Auftrag
 
 
 --Aufgabe 2.3
@@ -115,28 +118,82 @@ Select MitID, avg(Dauer) as durchschnittliche_Dauer, (datename(weekday,ErlDat)) 
 
 --Aufgabe 2.5
 --a)
+--Where
 SELECT AufNr, EtBezeichnung, Anzahl, EtPreis, Anzahl*EtPreis as Ersatzteilkosten FROM Montage m, Ersatzteil e WHERE m.EtID = e.EtID ORDER BY AufNr;    
+--Join
 SELECT AufNr, EtBezeichnung, Anzahl, EtPreis, Anzahl*EtPreis as Ersatzteilkosten FROM Montage m Join Ersatzteil e on m.EtID = e.EtID ORDER BY AufNr;  
 --b)
 Select AufNr, m.MitID, m.MitStundensatz, a.Dauer, m.MitStundensatz * Cast(a.Dauer as smallmoney) as Lohnkosten from Auftrag a Join Mitarbeiter m on a.MitID = m.MitID Where Dauer is not Null
 --c)
 Select KunName, KunOrt, Anfahrt from Kunde k Join Auftrag a on k.KunNr = a.KunNr Where Anfahrt > 50 Order by Anfahrt
 --d)
-Select KunName, a.AufNr, ErlDat, e.EtID from Kunde k Join Auftrag a on k.KunNr = a.KunNr Join Montage m on a.AufNr = m.AufNr Join Ersatzteil e on e.EtID = m.EtID Where  e.EtID = 'H0230' And DateDiff(month, ErlDat, GetDate()) < 3 And Dauer is not Null 
+Select KunName, a.AufNr, ErlDat, e.EtID 
+from Kunde k Join Auftrag a on k.KunNr = a.KunNr Join Montage m on a.AufNr = m.AufNr Join Ersatzteil e on e.EtID = m.EtID 
+Where  e.EtID = 'H0230' 
+And DateDiff(month, ErlDat, GetDate()) < 3 
+And Dauer is not Null 
 --e)
-Select a.AufNr, Anzahl*EtPreis as Materialkosten, MitStundensatz* Cast(a.Dauer as smallmoney) as Lohnkosten, a.Anfahrt*2.50 as Anfahrtskosten from Auftrag a Join Mitarbeiter m on m.MitID = a.MitID Join Montage mt on a.AufNr = mt.AufNr Join Ersatzteil e on e.EtID = mt.EtID Where Anfahrt is not null
+Select a.AufNr, Anzahl*EtPreis as Materialkosten, MitStundensatz* Cast(a.Dauer as smallmoney) as Lohnkosten, a.Anfahrt*2.50 as Anfahrtskosten 
+from Auftrag a Join Mitarbeiter m on m.MitID = a.MitID Join Montage mt on a.AufNr = mt.AufNr Join Ersatzteil e on e.EtID = mt.EtID Where Anfahrt is not null
 --f)
 Select AufNr, Case when a.MitID is Null then 'nicht festgelegt' else m.MitName end as Mitarbeiter, AufDat from Auftrag a left Join Mitarbeiter m on a.MitID = m.MitID Where month(AufDat) = month(GetDate())
 Select * from Auftrag Where month(AufDat) = month(GetDate())
 --g)
 Select EtBezeichnung, m.EtID, Sum(Anzahl) as Gebrauch from Ersatzteil e Join Montage m on e.EtID = m.EtID Join Auftrag a on a.AufNr = m.AufNr Where month(AufDat) = month(GetDate()) group by EtBezeichnung, m.EtID
 
+
 --Aufgabe 2.6
 --a)
-Select m.MitID, m.MitName from Mitarbeiter m Where Not Exists (Select a.MitID from Auftrag a Where month(GetDate()) = month(GetDate()) And a.MitID = m.MitID)
+Select m.MitID, m.MitName from Mitarbeiter m Where Not Exists (Select a.MitID from Auftrag a Where month(AufDat) = month(GetDate()) And a.MitID = m.MitID and year(AufDat) = year(GetDate()))
 --b)
-Select a.AufNr from Auftrag a Where Not Exists (Select m.AufNr from Montage m Where a.AufNr = m.AufNr)
---Gegensumme
-Select Count(AufNr) as Summe from Montage Group by AufNr
+Select a.AufNr, m.MitStundensatz * Cast(a.Dauer as smallmoney) as Lohnkosten, (Anfahrt*2.50) as Fahrtkosten from Auftrag a Join Mitarbeiter m on m.MitID = a.MitID Where Dauer is not null and Not Exists (Select m.AufNr from Montage m Where a.AufNr = m.AufNr)
 --c)
 Select AufNr, AufDat from Auftrag Where AufDat = (Select Min(AufDat) from Auftrag Where Dauer is Null)
+--d)
+Select KunNr from Auftrag Where KunNr Not in (Select KunNr from Auftrag Where month(AufDat) != 3)
+--e)
+---Hier kommt noch was hin
+
+
+--Aufgabe 2.7
+--a)
+Select MitID, Sum(Anfahrt) as Fahrt from Auftrag Group by MitID Having Sum(Anfahrt) > 500
+--b) fehlerhaft
+Select e.EtID, Sum(m.Anzahl) as verbraucht from Ersatzteil e Join Montage m on e.EtID = m.EtID Group by e.EtID Having Sum(m.Anzahl) < e.EtAnzLager
+Select * from Ersatzteil
+
+
+--Aufgabe 2.8
+--a)
+Select * from Kunde
+Insert into Kunde Values(1501, 'Simon', 'Dresden', '01234', 'Musterstraße 1')
+--b)
+Select * from Mitarbeiter
+Update Mitarbeiter Set MitStundensatz = 75 Where MitID IN (Select MitID from Mitarbeiter Where MitJob = 'Azubi')
+--c)
+Select * from Montage
+Delete from Montage Where EtID in (Select EtID from Ersatzteil Where EtHersteller = 'Mosch')
+Select * from Ersatzteil
+Delete from Ersatzteil Where EtHersteller = 'Mosch'
+--d) 
+Select * from Montage 
+Select * from Kunde
+Select * from Auftrag
+
+Select distinct KunNr into tempKun from Auftrag Where KunNr Not In (Select Distinct KunNr from Auftrag where month(AufDat) != 3 or Dauer is null)
+Delete from montage Where AufNr in (Select AufNr from Auftrag where month(erldat) = 3 and dauer is not null)
+Delete from Auftrag where month(erldat) = 3 and dauer is not null
+Delete from Kunde where KunNr in (Select KunNr from tempKun)
+Drop table tempKun
+
+
+--Aufgabe 2.9
+--a) Differenz
+Select * from Mitarbeiter
+Select KunOrt from Kunde except Select MitEinsatzort from Mitarbeiter
+--b) Durchschnitt
+Select KunOrt from Kunde intersect Select MitEinsatzort from Mitarbeiter
+--c) Vereinigung
+Select KunOrt from Kunde union Select MitEinsatzort from Mitarbeiter
+
+
