@@ -153,14 +153,23 @@ Select AufNr, AufDat from Auftrag Where AufDat = (Select Min(AufDat) from Auftra
 Select KunNr from Auftrag Where KunNr Not in (Select KunNr from Auftrag Where month(AufDat) != 3)
 --e)
 ---Hier kommt noch was hin
+--korreliert
+Select MitID, a1.AufNr, Dauer from Auftrag a1 Where Dauer = (Select Max(Dauer) from Auftrag a2 Where a1.MitID = a2.MitID) Group by MitID, Dauer, a1.AufNr
+
+--unkorrelliert
+Select a1.MitID, a1.AufNr, a2.MaxDauer 
+from Auftrag a1, 
+	(Select MitID, Max(Dauer) MaxDauer 
+	 from Auftrag where Dauer is not Null Group by MitID) as a2 
+Where a1.MitID=a2.MitID and a1.Dauer=a2.MaxDauer 
+Group by a1.MitID, a1.AufNr, a2.MaxDauer
 
 
 --Aufgabe 2.7
 --a)
-Select MitID, Sum(Anfahrt) as Fahrt from Auftrag Group by MitID Having Sum(Anfahrt) > 500
---b) fehlerhaft
-Select e.EtID, Sum(m.Anzahl) as verbraucht from Ersatzteil e Join Montage m on e.EtID = m.EtID Group by e.EtID Having Sum(m.Anzahl) < e.EtAnzLager
-Select * from Ersatzteil
+Select MitID, Sum(Anfahrt) as Gesamtahrt from Auftrag Group by MitID Having Sum(Anfahrt) > 500
+--b)
+Select e.EtID, Sum(m.Anzahl) as verbraucht, Avg(e.EtAnzLager) as Bestand from Ersatzteil e Join Montage m on e.EtID = m.EtID Group by e.EtID Having Sum(m.Anzahl) < Avg(e.EtAnzLager)
 
 
 --Aufgabe 2.8
@@ -195,5 +204,59 @@ Select KunOrt from Kunde except Select MitEinsatzort from Mitarbeiter
 Select KunOrt from Kunde intersect Select MitEinsatzort from Mitarbeiter
 --c) Vereinigung
 Select KunOrt from Kunde union Select MitEinsatzort from Mitarbeiter
+
+
+--Aufgabe 2.10
+Create View Auftragswert
+As
+Select a.AufNr, a.ErlDat, k.KunOrt, Cast(Anzahl as smallmoney) * EtPreis as Materialkosten, Cast(a.Anfahrt *2.50 as smallmoney) as Anfahrtskosten , MitStundensatz * Cast(a.Dauer as smallmoney) as Lohnkosten
+from Auftrag a 
+Join Mitarbeiter m on m.MitID = a.MitID 
+Join Montage mt on a.AufNr = mt.AufNr 
+Join Ersatzteil e on e.EtID = mt.EtID 
+Join Kunde k on a.KunNr = k.KunNr
+Where dauer is not null
+
+Select AufNr, (Materialkosten + Anfahrtskosten + Lohnkosten) as Gesamtkosten
+from Auftragswert
+
+
+--Aufgabe 2.11
+Select AufNr, Anfahrt,
+	Case 
+		When  (Anfahrt * 2.50) >= 30 then (Anfahrt * 2.50)
+	End	as Anfahrtskosten
+From Auftrag
+Where Anfahrt >= 12
+
+
+--Aufgabe 3.1
+--zum Prüfen
+Select KunNr, Count(KunNr) as Anzahl from Auftrag Where MitID = '103' Group by KunNr
+Select * from Auftrag
+--eigentliche Code
+Create Procedure MitarbeiterKunden(@MitID nvarchar(3))
+As
+	Select KunNr, Count(KunNr) as Häufigkeit
+	From Auftrag
+	Where MitID = @MitID
+	Group by KunNr
+Return
+Exec MitarbeiterKunden '103'
+
+
+--Aufgabe 3.2
+--Zum Prüfen
+Select EtID, Sum(Anzahl) as Gesamt from Montage Group by EtID Having Sum(Anzahl) > 45
+Select EtID from Ersatzteil
+--eigentliche Code
+Create Procedure AnzahlVerarbeitetGrößer(@Parameter nvarchar(10))
+As
+	Select EtID, Sum(Anzahl) as Häufigkeit
+	From Montage
+	Group by EtID
+	Having Sum(Anzahl) > @Parameter
+Return
+Exec AnzahlVerarbeitetGrößer '45'
 
 
