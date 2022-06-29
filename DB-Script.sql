@@ -235,7 +235,7 @@ Where Anfahrt >= 12
 Select KunNr, Count(KunNr) as Anzahl from Auftrag Where MitID = '103' Group by KunNr
 Select * from Auftrag
 --eigentliche Code
-Create Procedure MitarbeiterKunden(@MitID nvarchar(3))
+Create Procedure MitarbeiterKunden(@MitID varchar(3))
 As
 	Select KunNr, Count(KunNr) as Häufigkeit
 	From Auftrag
@@ -250,7 +250,7 @@ Exec MitarbeiterKunden '103'
 Select EtID, Sum(Anzahl) as Gesamt from Montage Group by EtID Having Sum(Anzahl) > 45
 Select EtID from Ersatzteil
 --eigentliche Code
-Create Procedure AnzahlVerarbeitetGrößer(@Parameter nvarchar(10))
+Create Procedure AnzahlVerarbeitetGrößer(@Parameter varchar(10))
 As
 	Select EtID, Sum(Anzahl) as Häufigkeit
 	From Montage
