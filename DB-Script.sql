@@ -159,7 +159,7 @@ Select MitID, a1.AufNr, Dauer from Auftrag a1 Where Dauer = (Select Max(Dauer) f
 --unkorrelliert
 Select a1.MitID, a1.AufNr, a2.MaxDauer 
 from Auftrag a1, 
-	(Select MitID, Max(Dauer) MaxDauer 
+	(Select MitID, Max(Dauer) as MaxDauer 
 	 from Auftrag where Dauer is not Null Group by MitID) as a2 
 Where a1.MitID=a2.MitID and a1.Dauer=a2.MaxDauer 
 Group by a1.MitID, a1.AufNr, a2.MaxDauer
@@ -167,7 +167,7 @@ Group by a1.MitID, a1.AufNr, a2.MaxDauer
 
 --Aufgabe 2.7
 --a)
-Select MitID, Sum(Anfahrt) as Gesamtahrt from Auftrag Group by MitID Having Sum(Anfahrt) > 500
+Select MitID, Sum(Anfahrt) as Gesamtfahrt from Auftrag Where month(ErlDat) = 4 Group by MitID Having Sum(Anfahrt) > 500
 --b)
 Select e.EtID, Sum(m.Anzahl) as verbraucht, Avg(e.EtAnzLager) as Bestand from Ersatzteil e Join Montage m on e.EtID = m.EtID Group by e.EtID Having Sum(m.Anzahl) < Avg(e.EtAnzLager)
 
@@ -258,5 +258,3 @@ As
 	Having Sum(Anzahl) > @Parameter
 Return
 Exec AnzahlVerarbeitetGrößer '45'
-
-
