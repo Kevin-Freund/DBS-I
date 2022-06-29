@@ -1,4 +1,3 @@
-
 --Aufgabe 1.1 Tabellenerstellung
 CREATE TABLE Mitarbeiter (
 	MitID char(3) PRIMARY KEY Not Null,
@@ -146,7 +145,9 @@ Select EtBezeichnung, m.EtID, Sum(Anzahl) as Gebrauch from Ersatzteil e Join Mon
 --a)
 Select m.MitID, m.MitName from Mitarbeiter m Where Not Exists (Select a.MitID from Auftrag a Where month(AufDat) = month(GetDate()) And a.MitID = m.MitID and year(AufDat) = year(GetDate()))
 --b)
-Select a.AufNr, m.MitStundensatz * Cast(a.Dauer as smallmoney) as Lohnkosten, (Anfahrt*2.50) as Fahrtkosten from Auftrag a Join Mitarbeiter m on m.MitID = a.MitID Where Dauer is not null and Not Exists (Select m.AufNr from Montage m Where a.AufNr = m.AufNr)
+Select a.AufNr, m.MitStundensatz * Cast(a.Dauer as smallmoney) as Lohnkosten, (Anfahrt*2.50) as Fahrtkosten 
+from Auftrag a Join Mitarbeiter m on m.MitID = a.MitID 
+Where Dauer is not null and Not Exists (Select m.AufNr from Montage m Where a.AufNr = m.AufNr)
 --c)
 Select AufNr, AufDat from Auftrag Where AufDat = (Select Min(AufDat) from Auftrag Where Dauer is Null)
 --d)
@@ -211,9 +212,9 @@ Create View Auftragswert
 As
 Select a.AufNr, a.ErlDat, k.KunOrt, Cast(Anzahl as smallmoney) * EtPreis as Materialkosten, Cast(a.Anfahrt *2.50 as smallmoney) as Anfahrtskosten , MitStundensatz * Cast(a.Dauer as smallmoney) as Lohnkosten
 from Auftrag a 
+left Join Montage mt on a.AufNr = mt.AufNr 
+left Join Ersatzteil e on e.EtID = mt.EtID 
 Join Mitarbeiter m on m.MitID = a.MitID 
-Join Montage mt on a.AufNr = mt.AufNr 
-Join Ersatzteil e on e.EtID = mt.EtID 
 Join Kunde k on a.KunNr = k.KunNr
 Where dauer is not null
 
@@ -243,6 +244,8 @@ As
 	Group by KunNr
 Return
 Exec MitarbeiterKunden '103'
+
+Drop Procedure MitarbeiterKunden
 
 
 --Aufgabe 3.2
